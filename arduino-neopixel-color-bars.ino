@@ -36,93 +36,9 @@ typedef uint32_t PixelColor;
 
 PixelColor pixelColors[] = {
   // Sorted in contrast order, by the mean of absolute differences between each primary color
-  // Low-contrast colors are commented out, to provide a more vivid display
-	// /*   0 */  pixels.Color(0,0,0),  /* black */
-	// /*   0 */  pixels.Color(105,105,105),  /* dim_gray_/_dim_grey */
-	// /*   0 */  pixels.Color(128,128,128),  /* gray_/_grey */
-	// /*   0 */  pixels.Color(169,169,169),  /* dark_gray_/_dark_grey */
-	// /*   0 */  pixels.Color(192,192,192),  /* silver */
-	// /*   0 */  pixels.Color(211,211,211),  /* light_gray_/_light_grey */
-	// /*   0 */  pixels.Color(220,220,220),  /* gainsboro */
-	// /*   0 */  pixels.Color(245,245,245),  /* white_smoke */
-	// /*   0 */  pixels.Color(255,255,255),  /* white */
-	// /*   1 */  pixels.Color(255,250,250),  /* snow */
-	// /*   2 */  pixels.Color(248,248,255),  /* ghost_white */
-	// /*   5 */  pixels.Color(255,245,238),  /* sea_shell */
-	// /*   5 */  pixels.Color(245,255,250),  /* mint_cream */
-	// /*   5 */  pixels.Color(255,250,240),  /* floral_white */
-	// /*   5 */  pixels.Color(240,248,255),  /* alice_blue */
-	// /*   5 */  pixels.Color(255,255,240),  /* ivory */
-	// /*   5 */  pixels.Color(240,255,255),  /* azure */
-	// /*   6 */  pixels.Color(255,240,245),  /* lavender_blush */
-	// /*   6 */  pixels.Color(250,240,230),  /* linen */
-	// /*   6 */  pixels.Color(230,230,250),  /* lavender */
-	// /*   7 */  pixels.Color(253,245,230),  /* old_lace */
-	// /*   8 */  pixels.Color(245,245,220),  /* beige */
-	// /*  10 */  pixels.Color(47,79,79),  /* dark_slate_gray */
-	// /*  10 */  pixels.Color(224,255,255),  /* light_cyan */
-	// /*  10 */  pixels.Color(255,255,224),  /* light_yellow */
-	// /*  10 */  pixels.Color(255,228,225),  /* misty_rose */
-	// /*  10 */  pixels.Color(112,128,144),  /* slate_gray */
-	// /*  10 */  pixels.Color(240,255,240),  /* honeydew */
-	// /*  11 */  pixels.Color(250,235,215),  /* antique_white */
-	// /*  11 */  pixels.Color(255,248,220),  /* corn_silk */
-	// /*  11 */  pixels.Color(119,136,153),  /* light_slate_gray */
-	// /*  13 */  pixels.Color(250,250,210),  /* light_golden_rod_yellow */
-	// /*  14 */  pixels.Color(255,239,213),  /* papaya_whip */
-	// /*  15 */  pixels.Color(188,143,143),  /* rosy_brown */
-	// /*  15 */  pixels.Color(176,196,222),  /* light_steel_blue */
-	// /*  16 */  pixels.Color(216,191,216),  /* thistle */
-	// /*  16 */  pixels.Color(255,235,205),  /* blanched_almond */
-	// /*  16 */  pixels.Color(255,250,205),  /* lemon_chiffon */
-	// /*  18 */  pixels.Color(176,224,230),  /* powder_blue */
-	// /*  19 */  pixels.Color(173,216,230),  /* light_blue */
-	// /*  19 */  pixels.Color(255,228,196),  /* bisque */
-	// /*  21 */  pixels.Color(175,238,238),  /* pale_turquoise */
-	// /*  21 */  pixels.Color(95,158,160),  /* cadet_blue */
-	// /*  22 */  pixels.Color(238,232,170),  /* pale_golden_rod */
-	// /*  22 */  pixels.Color(245,222,179),  /* wheat */
-	// /*  23 */  pixels.Color(210,180,140),  /* tan */
-	// /*  23 */  pixels.Color(255,218,185),  /* peach_puff */
-	// /*  24 */  pixels.Color(255,192,203),  /* pink */
-	// /*  24 */  pixels.Color(255,228,181),  /* moccasin */
-	// /*  27 */  pixels.Color(189,183,107),  /* dark_khaki */
-	// /*  27 */  pixels.Color(85,107,47),  /* dark_olive_green */
-	// /*  27 */  pixels.Color(255,222,173),  /* navajo_white */
-	// /*  28 */  pixels.Color(255,182,193),  /* light_pink */
-	// /*  29 */  pixels.Color(25,25,112),  /* midnight_blue */
-	// /*  29 */  pixels.Color(72,61,139),  /* dark_slate_blue */
-	// /*  29 */  pixels.Color(222,184,135),  /* burly_wood */
-	// /*  30 */  pixels.Color(143,188,143),  /* dark_sea_green */
-	// /*  33 */  pixels.Color(240,230,140),  /* khaki */
-	// /*  33 */  pixels.Color(135,206,235),  /* sky_blue */
-	// /*  36 */  pixels.Color(70,130,180),  /* steel_blue */
-	// /*  37 */  pixels.Color(205,92,92),  /* indian_red */
-	// /*  37 */  pixels.Color(240,128,128),  /* light_coral */
-	// /*  37 */  pixels.Color(233,150,122),  /* dark_salmon */
-	// /*  38 */  pixels.Color(135,206,250),  /* light_sky_blue */
-	// /*  38 */  pixels.Color(160,82,45),  /* sienna */
-	// /*  40 */  pixels.Color(221,160,221),  /* plum */
-	// /*  40 */  pixels.Color(139,69,19),  /* saddle_brown */
-	// /*  41 */  pixels.Color(165,42,42),  /* brown */
-	// /*  42 */  pixels.Color(128,0,0),  /* maroon */
-	// /*  42 */  pixels.Color(128,128,0),  /* olive */
-	// /*  42 */  pixels.Color(0,128,128),  /* teal */
-	// /*  42 */  pixels.Color(0,0,128),  /* navy */
-	// /*  43 */  pixels.Color(106,90,205),  /* slate_blue */
-	// /*  44 */  pixels.Color(255,160,122),  /* light_salmon */
-	// /*  45 */  pixels.Color(250,128,114),  /* salmon */
-	// /*  45 */  pixels.Color(100,149,237),  /* corn_flower_blue */
-	// /*  46 */  pixels.Color(139,0,0),  /* dark_red */
-	// /*  46 */  pixels.Color(102,205,170),  /* medium_aqua_marine */
-	// /*  46 */  pixels.Color(0,139,139),  /* dark_cyan */
-	// /*  46 */  pixels.Color(0,0,139),  /* dark_blue */
-	// /*  47 */  pixels.Color(107,142,35),  /* olive_drab */
-	// /*  47 */  pixels.Color(72,209,204),  /* medium_turquoise */
-	// /*  47 */  pixels.Color(147,112,219),  /* medium_purple */
-	// /*  47 */  pixels.Color(219,112,147),  /* pale_violet_red */
-	// /*  47 */  pixels.Color(205,133,63),  /* peru */
-	/*  48 */  pixels.Color(178,34,34),  /* firebrick */
+  // Lower contrast colors deleted, see colors_by_contrast.txt for complete set of Netscape colors
+  // contrast value       R, G, B         color
+  /*  48 */  pixels.Color(178,34,34),  /* firebrick */
 	/*  48 */  pixels.Color(46,139,87),  /* sea_green */
 	/*  49 */  pixels.Color(244,164,96),  /* sandy_brown */
 	/*  51 */  pixels.Color(32,178,170),  /* light_sea_green */
