@@ -1,7 +1,18 @@
-// Kevin Prichard
+// Copyright [2024] CC0 1.0 Universal
+// Initial contributor: Kevin Prichard https://github.com/Kevin-Prichard
 // Color bars display for Adafruit NeoPixel / WS2812B strips
+
+#include <stdio.h>
+
 #include <Adafruit_NeoPixel.h>
 
+#ifdef __AVR__
+#include <avr/power.h>  // Required for 16 MHz Adafruit Trinket
+#endif
+
+typedef uint32_t PixelColor;
+
+// Serial Debugging
 // What to send back to help debug this program
 #define DEBUG_SETUP 0x01        // .... ...1  setup()
 #define DEBUG_NEWBAR 0x02       // .... ..1.  newBar()
@@ -14,26 +25,46 @@
 // Serial debugging: all off
 #define SERIAL_DEBUG 0
 
-// Serial debugging: full chat (Careful! This will probably pin your device and keep it from completing setup.  Suggest using just what you need.)
+// Serial debugging: full chat
+// Careful! This will probably pin your device and keep it from completing setup/().  Suggest using only what you need.
 // #define SERIAL_DEBUG DEBUG_SETUP | DEBUG_NEWBAR | DEBUG_GETCOLOR | DEBUG_COLORSMERGED | DEBUG_POSCHANGED | DEBUG_POINTDIST | DEBUG_COLORDIST
 
-#include <stdio.h>
 
-#ifdef __AVR__
-#include <avr/power.h>  // Required for 16 MHz Adafruit Trinket
-#endif
+#define NUM_PIXELS 144  // Number of NeoPixels attached to the ucontroller
+#define PIN 6  // Arduino pin used to drive the NeoPixel array
+#define MIN_LUMINOSITY 4  // Minimum color byte value
+#define DIMMER 0.25  // Dim colors to this fraction; eventually attach this to a rotary encoder or potentiometer on an analog lead
+#define COLOR_DISTANCE_REQ 0.33333  // New color bars must have color that is at least this fraction of Euclidean distance away from any other color currently in use
+#define MAX_COLOR_DISTANCE sqrt(pow(256,2) + pow(256,2) + pow(256,2))  // Maximum possible euclidean distance between brightest and darkest colors
+#define MIN_BARS 3  // minimum number of color bars per session
+#define MAX_BARS 8  // max number of color bars per session
+#define MIN_BAR_LENGTH 4   // minimum color bar length
+#define MAX_BAR_LENGTH 16  // max color bar length
+#define MIN_SPEED_PIXSEC 0.1  // minimum color bar speed per loop()
+#define MAX_SPEED_PIXSEC 1.0   // maximum color bar speed per loop()
+#define MIN_TRANSPARENCY 0.0   // minimum alpha
+#define MAX_TRANSPARENCY 1.0   // max alpha
+#define MIN_LOOPS_LIFESPAN 1   // minimum number of circuits around the strip
+#define MAX_LOOPS_LIFESPAN 5   // max circuits around the strip
 
-// Number of NeoPixels attached to the Arduino
-#define NUM_PIXELS 72  // Popular NeoPixel ring size
-
-// Arduino pin used to drive the NeoPixel array
-#define PIN 6  // On Trinket or Gemma, suggest changing this to 1
+// Data about each color bar, which are created in newBar()
+struct ColorBar {
+  uint32_t length;
+  uint32_t startPos;
+  float curPos;
+  PixelColor color;
+  float speed;
+  bool direction;
+  float alpha;
+  float taperHead;
+  float taperTail
+  uint32_t lifeSpan;
+} colorBars[MAX_BARS];
 
 // Instantiate Adafruit NeoPixel handler
 Adafruit_NeoPixel pixels(NUM_PIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
-typedef uint32_t PixelColor;
-
+// Color palette - ripped from Netscape's original HTML color set, and limited for contrast and colorfulness
 PixelColor pixelColors[] = {
   // Sorted in contrast order, by the mean of absolute differences between each primary color
   // Lower contrast colors deleted, see colors_by_contrast.txt for complete set of Netscape colors
@@ -97,35 +128,6 @@ PixelColor pixelColors[] = {
 // Number of colors defined
 int pixelColorsCount = *(&pixelColors + 1) - pixelColors;
 
-// Number of NeoPixels attached to the ucontroller
-#define NUM_PIXELS 72
-#define MIN_LUMINOSITY 4
-#define DIMMER 0.25  // Dim colors to this fraction; eventually attach this to a rotary encoder or potentiometer on an analog lead
-#define COLOR_DISTANCE_REQ 0.33333  // New color bars must have color that is at least this fraction of Euclidean distance away from any other color currently in use
-#define MAX_COLOR_DISTANCE sqrt(pow(256,2) + pow(256,2) + pow(256,2))  // Maximum possible euclidean distance between brightest and darkest colors
-#define MIN_BARS 3
-#define MAX_BARS 8
-#define MIN_BAR_LENGTH 4
-#define MAX_BAR_LENGTH 16
-#define MIN_SPEED_PIXSEC 0.25
-#define MAX_SPEED_PIXSEC 1.5
-#define MIN_TRANSPARENCY 0.0
-#define MAX_TRANSPARENCY 1.0
-#define MIN_LOOPS_LIFESPAN 1
-#define MAX_LOOPS_LIFESPAN 5
-
-struct ColorBar {
-  uint32_t length;
-  uint32_t startPos;
-  double curPos;
-  PixelColor color;
-  double speed;
-  bool direction;
-  double alpha;
-  double taper;
-  uint32_t lifeSpan;
-} colorBars[MAX_BARS];
-
 
 // Difference between two colors
 double pointDistance(PixelColor c1, PixelColor c2, PixelColor mask, int base) {
@@ -148,7 +150,7 @@ double pointDistance(PixelColor c1, PixelColor c2, PixelColor mask, int base) {
 int colorDistance(PixelColor c1, PixelColor c2) {
   double red =   /* red */   pointDistance(c1, c2, 0x00FF0000, 16);
   double green = /* green */ pointDistance(c1, c2, 0x0000FF00, 8);
-  double blue = /* blue */  pointDistance(c1, c2, 0x000000FF, 0);
+  double blue =  /* blue */  pointDistance(c1, c2, 0x000000FF, 0);
   double result = sqrt(red + green + blue);
 
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_COLORDIST)
