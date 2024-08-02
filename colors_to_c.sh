@@ -8,6 +8,10 @@ perl -F\\t -ane '
      # -F\\t = split lines on tabs
      # -ane = # invoke script once per line
 
+BEGIN {
+    $"=", ";
+}
+
 # abs_mean() returns a contrast value:
 #   - The average of the absolute differences between each r,g and b triplet
 #   - The result is, the closer in value of the r, g, b triplet components
@@ -37,8 +41,11 @@ my($m) = &abs_mean(@a);
 
 # format as a call to static method Adafruit_NeoPixel.Color(),
 # which becomes a list value
-push @{$z->{int($m)}}, sprintf("\t/* %3d */  ", $m).
-      "pixels.Color$F[3],  /* $F[1] */\n";
+push @{$z->{int($m)}},
+     sprintf(
+         "\t/* %3d */  pixels.Color(%3d, %3d, %3d),  /* %s */\n",
+         $m, $a[0], $a[1], $a[2], $F[1]
+     );
 
 # Sort the color array by contrast, low to high, write to stdout
 END{
