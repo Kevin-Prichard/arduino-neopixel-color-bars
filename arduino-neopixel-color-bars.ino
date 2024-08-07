@@ -261,10 +261,6 @@ PixelColor getUnrelatedColor() {
   while (attempts++ < maxAttempts) {
     int seed = analogRead(0);
 
-#if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_GETCOLOR)
-    Serial.print("Seed: ");
-    Serial.println(seed);
-#endif
 // Obtain a hopefully random value to seed the pseudo-RNG
     int seed = analogRead(0);
 
