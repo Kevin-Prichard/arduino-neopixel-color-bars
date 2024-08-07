@@ -208,11 +208,11 @@ PixelColor pixelColors[] = {
 int pixelColorsCount = *(&pixelColors + 1) - pixelColors;
 
 // Difference between two colors
-inline double pointDistance(
+inline float pointDistance(
     PixelColor c1, PixelColor c2, PixelColor mask, int base) {
   int c1m = (c1 & mask) >> base;
   int c2m = (c2 & mask) >> base;
-  int cdiff = abs(c1m - c2m);
+  int cdiff = c1m - c2m;
 
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_POINTDIST)
   char buf[DEBUG_MAX_LINE];
@@ -225,10 +225,10 @@ inline double pointDistance(
 
 // Euclidean distance between two colors in 3-space
 int colorDistance(PixelColor c1, PixelColor c2) {
-  double red =   /* red */   pointDistance(c1, c2, 0x00FF0000, 16);
-  double green = /* green */ pointDistance(c1, c2, 0x0000FF00, 8);
-  double blue =  /* blue */  pointDistance(c1, c2, 0x000000FF, 0);
-  double result = sqrt(pow(red, 2.0) + pow(green, 2.0) + pow(blue, 2.0));
+  float red =   pointDistance(c1, c2, 0x00FF0000, 16);
+  float green = pointDistance(c1, c2, 0x0000FF00, 8);
+  float blue =  pointDistance(c1, c2, 0x000000FF, 0);
+  float result = sqrt(pow(red, 2.0) + pow(green, 2.0) + pow(blue, 2.0));
 
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_COLORDIST)
   char buf[100], fred[40], fgreen[40], fblue[40], fresult[40];
@@ -398,20 +398,20 @@ void loop() {
          barPix < bar->curPos + bar->length;
          barPix++) {
       uint32_t curPixColor = pixels.getPixelColor(barPix % NUM_PIXELS);
-      unsigned int red, green, blue;
+      unsigned char red, green, blue;
       uint32_t newColor;
       pixels.setPixelColor(
         barPix % NUM_PIXELS,
         newColor = pixels.Color(
           red =   ((((bar->color & (uint32_t)0x00FF0000) >> 16) * bar->alpha) +
                   (((curPixColor & (uint32_t)0x00FF0000) >> 16) *
-                  (1.0 - bar->alpha))) / 2 * DIMMER,
+                    (1.0 - bar->alpha))) / 2 * DIMMER,
           green = ((((bar->color & (uint32_t)0x0000FF00) >>  8) * bar->alpha) +
                   (((curPixColor & (uint32_t)0x0000FF00) >>  8) *
-                  (1.0 - bar->alpha))) / 2 * DIMMER,
+                    (1.0 - bar->alpha))) / 2 * DIMMER,
           blue =  (((bar->color & (uint32_t)0x000000FF) * bar->alpha) +
                   (curPixColor & (uint32_t)0x000000FF) *
-                  (1.0 - bar->alpha))  / 2 * DIMMER));
+                    (1.0 - bar->alpha))  / 2 * DIMMER));
 
 
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_COLORSMERGED)
