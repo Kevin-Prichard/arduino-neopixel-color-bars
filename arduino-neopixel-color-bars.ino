@@ -259,9 +259,8 @@ PixelColor getUnrelatedColor() {
 #endif
 
   while (attempts++ < maxAttempts) {
-    int seed = analogRead(0);
 
-// Obtain a hopefully random value to seed the pseudo-RNG
+    // Obtain a hopefully random value to seed the pseudo-RNG
     int seed = analogRead(0);
 
     randomSeed(seed);
