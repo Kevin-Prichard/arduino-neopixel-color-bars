@@ -22,7 +22,7 @@ typedef uint32_t PixelColor;
 #define DEBUG_POINTDIST 0x20     // ..1. ....  pointDistance()
 #define DEBUG_COLORDIST 0x40     // .1.. ....  colorDistance()
 
-// Serial debugging: all off
+// Serial debugging: default is all off
 #define SERIAL_DEBUG 0
 
 // Serial debugging: full chat
@@ -263,6 +263,8 @@ PixelColor getUnrelatedColor() {
     Serial.print("Seed: ");
     Serial.println(seed);
 #endif
+// Obtain a hopefully random value to seed the pseudo-RNG
+    int seed = analogRead(0);
 
     randomSeed(seed);
     colorCandidate = pixelColors[random(pixelColorsCount)];
@@ -346,8 +348,8 @@ void setup() {
   // delay(1000);
   Serial.begin(115200);
 
-  // Adafruit Trinket 5V 16 MHz.
 #if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
+  // Adafruit Trinket 5V 16 MHz.
   clock_prescale_set(clock_div_1);
 #endif
 
@@ -429,6 +431,7 @@ void loop() {
     Serial.print(bar->curPos);
     Serial.print("\t");
 #endif
+
     bar->curPos = bar->curPos + bar->speed * (bar->direction ? 1 : -1);
     if (bar->curPos > NUM_PIXELS) {
       bar->curPos = 0;
@@ -437,7 +440,6 @@ void loop() {
       bar->curPos = NUM_PIXELS;
     }
 
-    // bar->curPos = bar->curPos + (bar->direction ? 1 : -1);
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_POSCHANGED)
     Serial.print("curPos: ");
     Serial.print(bar->curPos);
@@ -445,5 +447,6 @@ void loop() {
 #endif
   }
 
-  pixels.show();  // Send the updated pixel colors to the hardware.
+  // Send the updated pixel colors to the hardware.
+  pixels.show();
 }
