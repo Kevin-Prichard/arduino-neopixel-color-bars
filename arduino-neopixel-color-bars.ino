@@ -45,14 +45,14 @@ typedef uint32_t PixelColor;
 
 // Dim colors to this fraction
 // eventually obtain this value from a rotary encoder or button
-#define DIMMER 0.25
+#define DIMMER 1.0
 
 // New color bars must have color that is at least this fraction of Euclidean
 // distance away from any other color currently in use
 #define COLOR_DISTANCE_REQ 0.33333
 
 // Maximum possible euclidean distance between brightest and darkest colors
-#define MAX_COLOR_DISTANCE sqrt(pow(256, 2) + pow(256, 2) + pow(256, 2))
+#define MAX_COLOR_DISTANCE sqrt(pow(256, 2) * 3)
 
 // minimum number of color bars per session
 #define MIN_BARS 3
@@ -73,7 +73,7 @@ typedef uint32_t PixelColor;
 #define MAX_SPEED_PIXSEC 2.0
 
 // minimum alpha / transparency for a color bar
-#define MIN_TRANSPARENCY 0.0
+#define MIN_TRANSPARENCY 0.1
 
 // maximum alpha of a color bar
 #define MAX_TRANSPARENCY 1.0
