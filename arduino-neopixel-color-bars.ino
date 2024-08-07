@@ -34,6 +34,8 @@ typedef uint32_t PixelColor;
                       DEBUG_POINTDIST | DEBUG_COLORDIST)
 */
 
+#define DEBUG_MAX_LINE 200
+
 // Number of NeoPixels attached to the ucontroller
 #define NUM_PIXELS 144
 
@@ -213,8 +215,8 @@ inline double pointDistance(
   int cdiff = abs(c1m - c2m);
 
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_POINTDIST)
-  char buf[100];
-  snprintf(buf, "c1m: %d, c2m: %d, cdiff: %d", c1m, c2m, cdiff);
+  char buf[DEBUG_MAX_LINE];
+  snprintf(buf, DEBUG_MAX_LINE, "c1m: %d, c2m: %d, cdiff: %d", c1m, c2m, cdiff);
   Serial.println(buf);
 #endif
 
@@ -253,7 +255,7 @@ PixelColor getUnrelatedColor() {
   int thisColDist = 0, farEnough = 0;
 
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_GETCOLOR)
-  char buf[100], pctMaxDist[15], colDistReq[15];
+  char buf[DEBUG_MAX_LINE], pctMaxDist[15], colDistReq[15];
 #endif
 
   while (attempts++ < maxAttempts) {
@@ -280,21 +282,25 @@ PixelColor getUnrelatedColor() {
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_GETCOLOR)
         dtostrf(thisColDist / MAX_COLOR_DISTANCE, 12, 4, &pctMaxDist[0]);
         dtostrf(COLOR_DISTANCE_REQ, 12, 4, &colDistReq[0]);
-        snprintf(
-          buf,
-          "attempts: %d, barNo: %d (barCount: %d), colorCandidate: %lu, "
-          "colorInUse: %lu, thisColDist: %d, farEnough: %d, thisColDist / "
-          "MAX_COLOR_DISTANCE = %s >= COLOR_DISTANCE_REQ(%s)\n",
-          attempts, barNo, barCount, colorCandidate, colorInUse, thisColDist,
-          farEnough, pctMaxDist, colDistReq);
+        snprintf(buf, DEBUG_MAX_LINE,
+          "attempts: %d, barNo: %d (barCount: %d),"
+          "colorCandidate: %lx, colorInUse: %lx,"
+          "thisColDist: %d, farEnough: %d"
+          ", thisColDist / MAX_COLOR_DISTANCE = %s >= COLOR_DISTANCE_REQ(%s)\n", 
+          attempts, barNo, barCount,
+          colorCandidate, colorInUse,
+          thisColDist, farEnough,
+          pctMaxDist, colDistReq);
         Serial.print(buf);
 #endif
       }
     }
+
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_GETCOLOR)
-    Serial.print("Attempts: ");
-    Serial.println(attempts);
+    snprintf(buf, DEBUG_MAX_LINE, "safeDistance[%d] >= barCount[%d] = %d", safeDistance, barCount, safeDistance >= barCount);
+    Serial.println(buf);
 #endif
+
     if (safeDistance >= barCount) {
       break;
     }
@@ -318,11 +324,11 @@ ColorBar newBar(int barNo) {
                random(MAX_LOOPS_LIFESPAN - MIN_LOOPS_LIFESPAN);
 
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_NEWBAR)
-  char buf[100];
+  char buf[DEBUG_MAX_LINE];
   char fcur[20], fspeed[20];
   dtostrf(b.curPos, 12, 4, fcur);
   dtostrf(b.speed, 12, 4, fspeed);
-  snprintf(buf,
+  snprintf(buf, DEBUG_MAX_LINE,
     "Bar#%d: length=%lu, start=%lu, cur=%s, "
     "color=%8lx, speed=%s, dir=%d, life=%lu\n",
     barNo,
@@ -354,8 +360,10 @@ void setup() {
 #endif
 
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_SETUP)
-  char buf[100];
-  snprintf(buf, "%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", barCount,
+  char buf[DEBUG_MAX_LINE];
+  snprintf(buf, DEBUG_MAX_LINE, 
+    "%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
+    barCount,
     SERIAL_DEBUG & DEBUG_SETUP,
     SERIAL_DEBUG & DEBUG_NEWBAR,
     SERIAL_DEBUG & DEBUG_GETCOLOR,
@@ -364,7 +372,9 @@ void setup() {
     SERIAL_DEBUG & DEBUG_POINTDIST,
     SERIAL_DEBUG & DEBUG_COLORDIST);
 
-  snprintf(buf, "%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", SERIAL_DEBUG,
+  snprintf(buf, DEBUG_MAX_LINE,
+    "%dX\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", 
+    SERIAL_DEBUG,
     DEBUG_SETUP,
     DEBUG_NEWBAR,
     DEBUG_GETCOLOR,
