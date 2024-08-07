@@ -223,7 +223,7 @@ inline float pointDistance(
   return cdiff;
 }
 
-// Euclidean distance between two colors in 3-space
+// Euclidean distance between two colors in RGB 3-space
 int colorDistance(PixelColor c1, PixelColor c2) {
   float red =   pointDistance(c1, c2, 0x00FF0000, 16);
   float green = pointDistance(c1, c2, 0x0000FF00, 8);
@@ -268,12 +268,16 @@ PixelColor getUnrelatedColor() {
     int safeDistance = 0;
     for (barNo = 0; barNo < barCount; barNo++) {
       colorInUse = colorBars[barNo].color;
+
       if (colorInUse > 0) {
         thisColDist = colorDistance(colorCandidate, colorInUse);
         farEnough = thisColDist / MAX_COLOR_DISTANCE >= COLOR_DISTANCE_REQ;
         if ( farEnough ) {
           ++safeDistance;
+        } else {
+          break;
         }
+
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_GETCOLOR)
         dtostrf(thisColDist / MAX_COLOR_DISTANCE, 12, 4, &pctMaxDist[0]);
         dtostrf(COLOR_DISTANCE_REQ, 12, 4, &colDistReq[0]);
