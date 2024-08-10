@@ -3,14 +3,13 @@
 // Color bars display for Adafruit NeoPixel / WS2812B strips
 
 #include <stdio.h>
-
-#include <Adafruit_NeoPixel.h>
+#include <stdlib.h>
 
 #ifdef __AVR__
 #include <avr/power.h>  // Required for 16 MHz Adafruit Trinket
 #endif
 
-typedef uint32_t PixelColor;
+#include "HeadbandColors.h"
 
 // Serial Debugging
 // What to send back to help debug this program
@@ -100,112 +99,6 @@ struct ColorBar {
   uint32_t lifeSpan;   // how long this colorbar lives (unimplemented)
 } colorBars[MAX_BARS];
 
-// Instantiate Adafruit NeoPixel handler
-Adafruit_NeoPixel pixels(NUM_PIXELS, PIN, NEO_GRB + NEO_KHZ800);
-
-// Color palette - ripped from Netscape's original HTML color set,
-//                 and limited for contrast and colorfulness
-PixelColor pixelColors[] = {
-  /*
-  Sorted in contrast order, by the mean of absolute diffs between r, g and b
-  Lower contrast colors removed, see colors_by_contrast.txt for complete set
-
-  contrast value           R    G    B        color name
-  ==============          ===  ===  ===       =================  */
-  /*  27 */  pixels.Color(189, 183, 107),  /* dark_khaki */
-  /*  27 */  pixels.Color(85,  107,  47),  /* dark_olive_green */
-  /*  27 */  pixels.Color(255, 222, 173),  /* navajo_white */
-  /*  28 */  pixels.Color(255, 182, 193),  /* light_pink */
-  /*  29 */  pixels.Color(25,   25, 112),  /* midnight_blue */
-  /*  29 */  pixels.Color(72,   61, 139),  /* dark_slate_blue */
-  /*  29 */  pixels.Color(222, 184, 135),  /* burly_wood */
-  /*  30 */  pixels.Color(143, 188, 143),  /* dark_sea_green */
-  /*  33 */  pixels.Color(240, 230, 140),  /* khaki */
-  /*  33 */  pixels.Color(135, 206, 235),  /* sky_blue */
-  /*  36 */  pixels.Color(70,  130, 180),  /* steel_blue */
-  /*  37 */  pixels.Color(205,  92,  92),  /* indian_red */
-  /*  37 */  pixels.Color(240, 128, 128),  /* light_coral */
-  /*  37 */  pixels.Color(233, 150, 122),  /* dark_salmon */
-  /*  38 */  pixels.Color(135, 206, 250),  /* light_sky_blue */
-  /*  38 */  pixels.Color(160,  82,  45),  /* sienna */
-  /*  40 */  pixels.Color(221, 160, 221),  /* plum */
-  /*  40 */  pixels.Color(139,  69,  19),  /* saddle_brown */
-  /*  41 */  pixels.Color(165,  42,  42),  /* brown */
-  /*  42 */  pixels.Color(128,   0,   0),  /* maroon */
-  /*  42 */  pixels.Color(128, 128,   0),  /* olive */
-  /*  42 */  pixels.Color(0,   128, 128),  /* teal */
-  /*  42 */  pixels.Color(0,     0, 128),  /* navy */
-  /*  43 */  pixels.Color(106,  90, 205),  /* slate_blue */
-  /*  44 */  pixels.Color(255, 160, 122),  /* light_salmon */
-  /*  45 */  pixels.Color(250, 128, 114),  /* salmon */
-  /*  45 */  pixels.Color(100, 149, 237),  /* corn_flower_blue */
-  /*  46 */  pixels.Color(139,   0,   0),  /* dark_red */
-  /*  46 */  pixels.Color(102, 205, 170),  /* medium_aqua_marine */
-  /*  46 */  pixels.Color(0,   139, 139),  /* dark_cyan */
-  /*  46 */  pixels.Color(0,     0, 139),  /* dark_blue */
-  /*  47 */  pixels.Color(107, 142,  35),  /* olive_drab */
-  /*  47 */  pixels.Color(72,  209, 204),  /* medium_turquoise */
-  /*  47 */  pixels.Color(147, 112, 219),  /* medium_purple */
-  /*  47 */  pixels.Color(219, 112, 147),  /* pale_violet_red */
-  /*  47 */  pixels.Color(205, 133,  63),  /* peru */
-  /*  48 */  pixels.Color(178,  34,  34),  /* firebrick */
-  /*  48 */  pixels.Color(46,  139,  87),  /* sea_green */
-  /*  49 */  pixels.Color(244, 164,  96),  /* sandy_brown */
-  /*  51 */  pixels.Color(32,  178, 170),  /* light_sea_green */
-  /*  51 */  pixels.Color(123, 104, 238),  /* medium_slate_blue */
-  /*  53 */  pixels.Color(65,  105, 225),  /* royal_blue */
-  /*  57 */  pixels.Color(184, 134,  11),  /* dark_golden_rod */
-  /*  57 */  pixels.Color(127, 255, 212),  /* aqua_marine */
-  /*  58 */  pixels.Color(255, 127,  80),  /* coral */
-  /*  58 */  pixels.Color(64,  224, 208),  /* turquoise */
-  /*  60 */  pixels.Color(210, 105,  30),  /* chocolate */
-  /*  61 */  pixels.Color(255,  99,  71),  /* tomato */
-  /*  61 */  pixels.Color(60,  179, 113),  /* medium_sea_green */
-  /*  62 */  pixels.Color(218, 165,  32),  /* golden_rod */
-  /*  62 */  pixels.Color(144, 238, 144),  /* light_green */
-  /*  66 */  pixels.Color(0,   100,   0),  /* dark_green */
-  /*  66 */  pixels.Color(152, 251, 152),  /* pale_green */
-  /*  68 */  pixels.Color(154, 205,  50),  /* yellow_green */
-  /*  68 */  pixels.Color(0,     0, 205),  /* medium_blue */
-  /*  68 */  pixels.Color(75,    0, 130),  /* indigo */
-  /*  69 */  pixels.Color(0,   206, 209),  /* dark_turquoise */
-  /*  69 */  pixels.Color(218, 112, 214),  /* orchid */
-  /*  70 */  pixels.Color(34,  139,  34),  /* forest_green */
-  /*  72 */  pixels.Color(238, 130, 238),  /* violet */
-  /*  75 */  pixels.Color(30,  144, 255),  /* dodger_blue */
-  /*  75 */  pixels.Color(186,  85, 211),  /* medium_orchid */
-  /*  75 */  pixels.Color(255, 105, 180),  /* hot_pink */
-  /*  80 */  pixels.Color(220,  20,  60),  /* crimson */
-  /*  85 */  pixels.Color(255,   0,   0),  /* red */
-  /*  85 */  pixels.Color(255,  69,   0),  /* orange_red */
-  /*  85 */  pixels.Color(255, 140,   0),  /* dark_orange */
-  /*  85 */  pixels.Color(255, 165,   0),  /* orange */
-  /*  85 */  pixels.Color(255, 215,   0),  /* gold */
-  /*  85 */  pixels.Color(255, 255,   0),  /* yellow */
-  /*  85 */  pixels.Color(0,   128,   0),  /* green */
-  /*  85 */  pixels.Color(0,   255, 255),  /* aqua */
-  /*  85 */  pixels.Color(0,   255, 255),  /* cyan */
-  /*  85 */  pixels.Color(0,   191, 255),  /* deep_sky_blue */
-  /*  85 */  pixels.Color(0,     0, 255),  /* blue */
-  /*  85 */  pixels.Color(153,  50, 204),  /* dark_orchid */
-  /*  85 */  pixels.Color(128,   0, 128),  /* purple */
-  /*  92 */  pixels.Color(138,  43, 226),  /* blue_violet */
-  /*  92 */  pixels.Color(139,   0, 139),  /* dark_magenta */
-  /*  96 */  pixels.Color(173, 255,  47),  /* green_yellow */
-  /*  96 */  pixels.Color(199,  21, 133),  /* medium_violet_red */
-  /* 103 */  pixels.Color(50,  205,  50),  /* lime_green */
-  /* 115 */  pixels.Color(0,   250, 154),  /* medium_spring_green */
-  /* 119 */  pixels.Color(148,   0, 211),  /* dark_violet */
-  /* 120 */  pixels.Color(255,  20, 147),  /* deep_pink */
-  /* 126 */  pixels.Color(124, 252,   0),  /* lawn_green */
-  /* 127 */  pixels.Color(127, 255,   0),  /* chartreuse */
-  /* 127 */  pixels.Color(0,   255, 127),  /* spring_green */
-  /* 170 */  pixels.Color(0,   255,   0),  /* lime */
-  /* 170 */  pixels.Color(255,   0, 255),  /* magenta_fuchsia */
-};
-
-// Determine the number of colors actually defined
-int pixelColorsCount = *(&pixelColors + 1) - pixelColors;
 
 // Difference between two colors
 inline float pointDistance(
