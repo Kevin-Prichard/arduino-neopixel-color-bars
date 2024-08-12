@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import json
 import re, sys
 from typing import List, Generator, Dict, Text, Tuple
 
@@ -17,7 +16,7 @@ COLOR_DEFS_RX = re.compile(
     r'\t\((?P<rgb>\d+,\d+,\d+)\)\s*$', re.IGNORECASE)
 
 
-def get_color_defs(pathname: str) -> Generator[Dict, None, None]:  # [str, str, List[int]], None, None]:
+def get_color_defs(pathname: str) -> Generator[Dict, None, None]:
     with open(pathname, 'r') as f:
         for line in f:
             match = COLOR_DEFS_RX.match(line)
@@ -34,8 +33,9 @@ def get_color_defs(pathname: str) -> Generator[Dict, None, None]:  # [str, str, 
 
 
 def get_color_indices(color_defs_pathname: Text,
-                 color_index_pathname: Text,
-                 contrast_threshold:float=45):
+                      color_index_pathname: Text,
+                      contrast_threshold:float=45,
+                      write_color_indices:bool=False) -> Dict[str, List[int]]:
 
     def primary_index(colors: List[Tuple[int, Dict]],
                       primaryIndex: int) -> List[int]:
@@ -98,11 +98,12 @@ extern int pixelColorsCount = *(&pixelColors + 1) - pixelColors;
 
 """)
 
-        for primary in ["red", "green", "blue"]:
-            f.write(f"extern const unsigned char {primary}Index[] = {{\n")
-            for idx in indices[primary]:
-                f.write(f"    {idx},\n")
-            f.write("};\n\n")
+        if write_color_indices:
+            for primary in ["red", "green", "blue"]:
+                f.write(f"extern const ColorByte {primary}Index[] = {{\n")
+                for idx in indices[primary]:
+                    f.write(f"    {idx},\n")
+                f.write("};\n\n")
 
     return indices
 
