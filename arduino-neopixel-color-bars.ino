@@ -210,41 +210,39 @@ PixelColor getUnrelatedColor(char forThisBar) {
   return colorCandidate;
 }
 
-ColorBar newBar(int barNo) {
-  ColorBar b;
-  b.length = MIN_BAR_LENGTH + random(MAX_BAR_LENGTH - MIN_BAR_LENGTH);
-  b.startPos = random(NUM_PIXELS);
-  b.curPos = b.startPos;
-  b.color = 0;
-  b.speed = MIN_SPEED_PIXSEC + (random(256) / 256.0) *
+void newBar(ColorBar *b, int barNo) {
+  b->length = MIN_BAR_LENGTH + random(MAX_BAR_LENGTH - MIN_BAR_LENGTH);
+  b->startPos = random(NUM_PIXELS);
+  b->curPos = b->startPos;
+  b->color = 0;
+  b->speed = MIN_SPEED_PIXSEC + (random(256) / 256.0) *
             (MAX_SPEED_PIXSEC - MIN_SPEED_PIXSEC);
-  b.direction = random(2) >= 1 ? true : false;
-  b.alpha = random(256) / 256.0;
-  b.taperHead = 0.0;
-  b.taperTail = 0.0;
-  b.lifeSpan = MIN_LOOPS_LIFESPAN +
+  b->direction = random(2) >= 1 ? true : false;
+  b->alpha = random(256) / 256.0;
+  b->taperHead = 0.0;
+  b->taperTail = 0.0;
+  b->lifeSpan = MIN_LOOPS_LIFESPAN +
                random(MAX_LOOPS_LIFESPAN - MIN_LOOPS_LIFESPAN);
 
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_NEWBAR)
   char buf[DEBUG_MAX_LINE];
   char fcur[20], fspeed[20];
-  dtostrf(b.curPos, 12, 4, fcur);
-  dtostrf(b.speed, 12, 4, fspeed);
+  dtostrf(b->curPos, 12, 4, fcur);
+  dtostrf(b->speed, 12, 4, fspeed);
   snprintf(buf, DEBUG_MAX_LINE,
     "Bar#%d: length=%lu, start=%lu, cur=%s, "
     "color=%8lx, speed=%s, dir=%d, life=%lu\n",
     barNo,
-    b.length,
-    b.startPos,
+    b->length,
+    b->startPos,
     fcur,
-    b.color,
+    b->color,
     fspeed,
-    b.direction,
-    b.lifeSpan);
+    b->direction,
+    b->lifeSpan);
   Serial.print(buf);
 #endif
 
-  return b;
 }
 
 
@@ -288,7 +286,7 @@ void setup() {
 #endif
 
   for (int barNo = 0; barNo < barCount; barNo++) {
-    colorBars[barNo] = newBar(barNo);
+    newBar(&colorBars[barNo], barNo);
   }
 
   for (int barNo = 0; barNo < barCount; barNo++) {
