@@ -33,7 +33,7 @@
                       DEBUG_POINTDIST | DEBUG_COLORDIST)
 */
 
-#define DEBUG_MAX_LINE 200
+#define DEBUG_MAX_LINE 400
 
 // Number of NeoPixels attached to the ucontroller
 #define NUM_PIXELS 144
