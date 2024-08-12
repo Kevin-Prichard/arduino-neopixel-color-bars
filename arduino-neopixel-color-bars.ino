@@ -139,61 +139,70 @@ int colorDistance(PixelColor c1, PixelColor c2) {
 
 int barCount;
 
-PixelColor getUnrelatedColor() {
+PixelColor getUnrelatedColor(char forThisBar) {
   // Find a color in pixelColors table that is at least COLOR_DISTANCE_REQ
   //     away from any other color in use by a live colorbar
-  int maxAttempts = 256, attempts = 0;
+  int maxAttempts = 1 << 10, attempts = 0;
   PixelColor colorCandidate = 0, colorInUse = 0;
   int barNo = 0;
-  int thisColDist = 0, farEnough = 0;
 
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_GETCOLOR)
   char buf[DEBUG_MAX_LINE], pctMaxDist[15], colDistReq[15];
 #endif
 
+  randomSeed(analogRead(0));
+
   while (attempts++ < maxAttempts) {
 
     // Obtain a hopefully random value to seed the pseudo-RNG
-    int seed = analogRead(0);
-
-    randomSeed(seed);
     colorCandidate = pixelColors[random(pixelColorsCount)];
     int safeDistance = 0;
-    for (barNo = 0; barNo < barCount; barNo++) {
+    for (barNo = 0; barNo < forThisBar; barNo++) {
       colorInUse = colorBars[barNo].color;
+      int thisColDist = 0, farEnough = 0;
 
       if (colorInUse > 0) {
         thisColDist = colorDistance(colorCandidate, colorInUse);
         farEnough = thisColDist / MAX_COLOR_DISTANCE >= COLOR_DISTANCE_REQ;
-        if ( farEnough ) {
-          ++safeDistance;
-        } else {
-          break;
-        }
+      } else {
+#if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_GETCOLOR)
+        Serial.println("ColorInUse == 0 ***********************************************");
+#endif
+        farEnough = 1;
+      }
+      if ( farEnough ) {
+        ++safeDistance;
+      }
 
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_GETCOLOR)
         dtostrf(thisColDist / MAX_COLOR_DISTANCE, 12, 4, &pctMaxDist[0]);
         dtostrf(COLOR_DISTANCE_REQ, 12, 4, &colDistReq[0]);
         snprintf(buf, DEBUG_MAX_LINE,
-          "attempts: %d, barNo: %d (barCount: %d),"
+          "attempts: %d, barNo: %d (barCount: %d, forThisBar: %d),"
           "colorCandidate: %lx, colorInUse: %lx,"
           "thisColDist: %d, farEnough: %d"
           ", thisColDist / MAX_COLOR_DISTANCE = %s >= COLOR_DISTANCE_REQ(%s)\n", 
-          attempts, barNo, barCount,
+          attempts, barNo, barCount, forThisBar,
           colorCandidate, colorInUse,
           thisColDist, farEnough,
           pctMaxDist, colDistReq);
         Serial.print(buf);
 #endif
+
+      if ( !farEnough ) {
+#if (SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_GETCOLOR)
+        Serial.println("!farEnough BREAK %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+#endif
+        break;
       }
     }
 
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_GETCOLOR)
-    snprintf(buf, DEBUG_MAX_LINE, "safeDistance[%d] >= barCount[%d] = %d", safeDistance, barCount, safeDistance >= barCount);
+    snprintf(buf, DEBUG_MAX_LINE, "safeDistance[%d] >= forThisBar[%d] = %d", safeDistance, forThisBar, safeDistance >= forThisBar);
     Serial.println(buf);
 #endif
 
-    if (safeDistance >= barCount) {
+    if ((safeDistance >= forThisBar) || (forThisBar == 0)) {
       break;
     }
   }
@@ -205,7 +214,7 @@ ColorBar newBar(int barNo) {
   b.length = MIN_BAR_LENGTH + random(MAX_BAR_LENGTH - MIN_BAR_LENGTH);
   b.startPos = random(NUM_PIXELS);
   b.curPos = b.startPos;
-  b.color = getUnrelatedColor();
+  b.color = 0;
   b.speed = MIN_SPEED_PIXSEC + (random(256) / 256.0) *
             (MAX_SPEED_PIXSEC - MIN_SPEED_PIXSEC);
   b.direction = random(2) >= 1 ? true : false;
@@ -279,6 +288,10 @@ void setup() {
 
   for (int barNo = 0; barNo < barCount; barNo++) {
     colorBars[barNo] = newBar(barNo);
+  }
+
+  for (int barNo = 0; barNo < barCount; barNo++) {
+    colorBars[barNo].color = getUnrelatedColor(barNo);
   }
 
   // init LED strip object
