@@ -129,7 +129,8 @@ int colorDistance(PixelColor c1, PixelColor c2) {
   dtostrf(green, 10, 3, &fgreen[0]);
   dtostrf(blue, 10, 3, &fblue[0]);
   dtostrf(result, 10, 3, &fresult[0]);
-  snprintf(buf, "===== red: %s, green: %s, blue: %s, result: %s =====\n",
+  snprintf(buf, DEBUG_MAX_LINE, 
+           "===== red: %s, green: %s, blue: %s, result: %s =====\n",
            fred, fgreen, fblue, fresult);
   Serial.println(buf);
 #endif
@@ -326,7 +327,7 @@ void loop() {
 
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_COLORSMERGED)
       char buf[100];
-      snprintf(buf,
+      snprintf(buf, DEBUG_MAX_LINE,
         "bar#%d \tpix#%lu \tpix#%lu \tred:%X "
         "\tgreen:%X \tblue:%X \tcolor:%lX\n",
         barNo,
