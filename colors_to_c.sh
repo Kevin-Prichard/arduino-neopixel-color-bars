@@ -27,6 +27,8 @@ sub abs_mean(){my (@a)=@_;
     return $sum/($#a+1);
 }
 
+++$overall;
+
 # The color name
 $F[1]=~s/\W+/_/mg;
 
@@ -41,19 +43,47 @@ my($m) = &abs_mean(@a);
 
 # format as a call to static method Adafruit_NeoPixel.Color(),
 # which becomes a list value
-push @{$z->{int($m)}},
-     sprintf(
-         "\t/* %3d */  pixels.Color(%3d, %3d, %3d),  /* %s */\n",
-         $m, $a[0], $a[1], $a[2], $F[1]
-     );
+# print "mean $m\t@a\t", $m >= 27, "\n";
+if($m >= 27) {
+    ++$accepted;
+    push @{$z->{int($m)}}, (
+        sprintf(
+            "\t/* %3d */  pixels.Color(%3d, %3d, %3d),  /* %s */\n",
+            $m, $a[0], $a[1], $a[2], $F[1]),
+        ($a[0] << 16) + ($a[1] << 8) + $a[0]
+    );
+    # print "        ", ($a[0] << 16) + ($a[1] << 8) + $a[0], ";\n";
+
+} else {
+    ++$rejected;
+}
 
 # Sort the color array by contrast, low to high, write to stdout
 END{
-    foreach$k(sort { $a<=>$b } keys %$z){
-        foreach$row(@{$z->{$k}}){
-            print($row);
+    print "Total lines: $overall, accepted: $accepted, rejected: $rejected\n";
+    my $ptr = 0;
+    my $colorIndex;
+    $"="\n****\n";
+    foreach$k(sort { $a<=>$b } keys %$z) {
+        # print "$k\t@{$z->{$k}}\n";
+	my $inner = 0;
+        foreach$row($z->{$k}) {
+	    ++$inner;
+            # print "hereee @{$row}\n";
+            print "row: @$row\n";
+            $colorIndex->{$$row[1]} = $ptr++;
         }
+	print "inner: $inner\n";
+    }
+
+    print "how many: $ptr\n";
+
+    foreach $comp (("Red", 0x00FF0000), ("Green", 0x0000FF00), ("Blue", 0x000000FF)) {
+        print "unsigned char colorIndex${comp[0]}[] = {\n";
+    	foreach $color(sort { $a & $comp[1] <=> $b & $comp[1] } keys %$colorIndex) {
+            print "    $colorIndex->{$color},\n"; 
+        }
+        print "};  /* End of colorIndex${comp[0]}[] */\n\n";
     }
 }
 '
-    
