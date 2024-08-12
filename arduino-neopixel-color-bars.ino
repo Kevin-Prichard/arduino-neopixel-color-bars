@@ -20,6 +20,7 @@
 #define DEBUG_POSCHANGED 0x10    // ...1 ....  loop() - position changed
 #define DEBUG_POINTDIST 0x20     // ..1. ....  pointDistance()
 #define DEBUG_COLORDIST 0x40     // .1.. ....  colorDistance()
+#define DEBUG_LOOPITERS 0x80     // 1... ....  loop()
 
 // Serial debugging: default is all off
 #define SERIAL_DEBUG 0
@@ -32,6 +33,8 @@
                       DEBUG_COLORSMERGED | DEBUG_POSCHANGED | \
                       DEBUG_POINTDIST | DEBUG_COLORDIST)
 */
+
+#define RESTART_AT_LOOPCOUNT 25000
 
 #define DEBUG_MAX_LINE 400
 
@@ -139,6 +142,7 @@ int colorDistance(PixelColor c1, PixelColor c2) {
 }
 
 int barCount;
+unsigned long loopIterCount;
 
 PixelColor getUnrelatedColor(char forThisBar) {
   // Find a color in pixelColors table that is at least COLOR_DISTANCE_REQ
@@ -247,6 +251,7 @@ void newBar(ColorBar *b, int barNo) {
 
 
 void setup() {
+  loopIterCount = 0;
   pinMode(LED_BUILTIN, OUTPUT);
   randomSeed(analogRead(0));
 
@@ -299,6 +304,10 @@ void setup() {
 
 
 void loop() {
+#if defined(SERIAL_DEBUG) && (SERIAL_DEBUG > 0)
+      char buf[DEBUG_MAX_LINE];
+#endif
+
   pixels.clear();
 
   for (int barNo = 0; barNo < barCount; barNo++) {
@@ -324,7 +333,6 @@ void loop() {
 
 
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_COLORSMERGED)
-      char buf[100];
       snprintf(buf, DEBUG_MAX_LINE,
         "bar#%d \tpix#%lu \tpix#%lu \tred:%X "
         "\tgreen:%X \tblue:%X \tcolor:%lX\n",
@@ -363,4 +371,15 @@ void loop() {
 
   // Send the updated pixel colors to the hardware.
   pixels.show();
+  ++loopIterCount;
+#if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_LOOPITERS)
+  if ( (loopIterCount % min(RESTART_AT_LOOPCOUNT, 1000)) == 0 ) {
+    snprintf(buf, DEBUG_MAX_LINE, "loopIterCount: %lu", loopIterCount);
+    Serial.println(buf);
+  }
+  if ( loopIterCount >= RESTART_AT_LOOPCOUNT) {
+    setup();
+  }
+#endif
+
 }
