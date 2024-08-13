@@ -34,7 +34,10 @@
                       DEBUG_POINTDIST | DEBUG_COLORDIST)
 */
 
-#define RESTART_AT_LOOPCOUNT 25000
+#define RESTART_AT_LOOPCOUNT 0
+
+// after a ColorBar lifeSpan is over: fade it, then replace it
+#define FADEAWAY 1
 
 #define DEBUG_MAX_LINE 400
 
@@ -59,34 +62,34 @@
 #define MAX_COLOR_DISTANCE sqrt(pow(256, 2) * 3)
 
 // minimum number of color bars per session
-#define MIN_BARS 3
+#define MIN_BARS 5
 
 // maxium number of color bars per session
-#define MAX_BARS 8
+#define MAX_BARS 10
 
 // minimum color bar length
-#define MIN_BAR_LENGTH 4
+#define MIN_BAR_LENGTH 24
 
 // maximum color bar length
-#define MAX_BAR_LENGTH 16
+#define MAX_BAR_LENGTH 48
 
 // minimum color bar speed per loop()
-#define MIN_SPEED_PIXSEC 0.25
+#define MIN_SPEED_PIXSEC 0.125
 
 // maximum color bar speed per loop()
-#define MAX_SPEED_PIXSEC 2.0
+#define MAX_SPEED_PIXSEC 1.0
 
 // minimum alpha / transparency for a color bar
-#define MIN_TRANSPARENCY 0.1
+#define MIN_TRANSPARENCY 0.66666
 
 // maximum alpha of a color bar
 #define MAX_TRANSPARENCY 1.0
 
 // minimum lifespan of a color bar as the number of trips around the strip
-#define MIN_LOOPS_LIFESPAN 1
+#define MIN_LOOPS_LIFESPAN 2500
 
 // maximum trips around the strip
-#define MAX_LOOPS_LIFESPAN 5
+#define MAX_LOOPS_LIFESPAN 10000
 
 // Data about each color bar, which are created in newBar()
 struct ColorBar {
@@ -99,7 +102,7 @@ struct ColorBar {
   float alpha;         // transparency
   float taperHead;     // number of pixels to fade the colorbar's head
   float taperTail;     // number of pixels to fade the tail
-  uint32_t lifeSpan;   // how long this colorbar lives (unimplemented)
+  long int lifeSpan;   // how long this colorbar lives (unimplemented)
 } colorBars[MAX_BARS];
 
 
@@ -155,7 +158,7 @@ PixelColor getUnrelatedColor(char forThisBar) {
   char buf[DEBUG_MAX_LINE], pctMaxDist[15], colDistReq[15];
 #endif
 
-  randomSeed(analogRead(0));
+  randomSeed(analogRead(random(6)));
 
   while (attempts++ < maxAttempts) {
 
@@ -222,7 +225,7 @@ void newBar(ColorBar *b, int barNo) {
   b->speed = MIN_SPEED_PIXSEC + (random(256) / 256.0) *
             (MAX_SPEED_PIXSEC - MIN_SPEED_PIXSEC);
   b->direction = random(2) >= 1 ? true : false;
-  b->alpha = random(256) / 256.0;
+  b->alpha = (192.0 + random(64)) / 256.0;
   b->taperHead = 0.0;
   b->taperTail = 0.0;
   b->lifeSpan = MIN_LOOPS_LIFESPAN +
@@ -304,20 +307,21 @@ void setup() {
 
 
 void loop() {
-#if defined(SERIAL_DEBUG) && (SERIAL_DEBUG > 0)
+#if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & (DEBUG_COLORSMERGED | DEBUG_POSCHANGED | DEBUG_LOOPITERS))
       char buf[DEBUG_MAX_LINE];
 #endif
 
   pixels.clear();
 
+  uint32_t curPixColor = 0;
+  unsigned char red = 0, green = 0, blue = 0;
+  uint32_t newColor = 0;
   for (int barNo = 0; barNo < barCount; barNo++) {
     ColorBar* bar = &colorBars[barNo];
     for (uint32_t barPix = bar->curPos;
          barPix < bar->curPos + bar->length;
          barPix++) {
-      uint32_t curPixColor = pixels.getPixelColor(barPix % NUM_PIXELS);
-      unsigned char red, green, blue;
-      uint32_t newColor;
+      curPixColor = pixels.getPixelColor(barPix % NUM_PIXELS);
       pixels.setPixelColor(
         barPix % NUM_PIXELS,
         newColor = pixels.Color(
@@ -330,22 +334,36 @@ void loop() {
           blue =  (((bar->color & (uint32_t)0x000000FF) * bar->alpha) +
                   (curPixColor & (uint32_t)0x000000FF) *
                     (1.0 - bar->alpha))  / 2 * DIMMER));
-
+    }
 
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_COLORSMERGED)
+      char falpha[15];
+      dtostrf(bar->alpha / MAX_COLOR_DISTANCE, 12, 4, &falpha[0]);
       snprintf(buf, DEBUG_MAX_LINE,
-        "bar#%d \tpix#%lu \tpix#%lu \tred:%X "
-        "\tgreen:%X \tblue:%X \tcolor:%lX\n",
+        "bar#%d \tred:%X "  // "bar#%d \tpix#%lu \tpix#%lu \tred:%X "
+        "\tgreen:%X \tblue:%X \tcolor:%lX \tlifeSpan: %ld \talpha:%s\n",
         barNo,
-        barPix,
-        (uint32_t)(barPix % NUM_PIXELS),
+        // barPix,
+        // (uint32_t)(barPix % NUM_PIXELS),
         red,
         green,
         blue,
-        newColor);
+        newColor,
+        bar->lifeSpan,
+        falpha);
       Serial.print(buf);
 #endif
+
+#if defined(FADEAWAY)
+    if (bar->lifeSpan-- <= 0) {
+      bar->alpha -= 0.0025;
+      if (bar->alpha <= 0) {
+        newBar(bar, barNo);
+        bar->color = getUnrelatedColor(barNo);
+      }
     }
+#endif
+
 
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_POSCHANGED)
     Serial.print(barNo);
@@ -372,11 +390,13 @@ void loop() {
   // Send the updated pixel colors to the hardware.
   pixels.show();
   ++loopIterCount;
+#if defined(RESTART_AT_LOOPCOUNT) && RESTART_AT_LOOPCOUNT > 0
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_LOOPITERS)
   if ( (loopIterCount % min(RESTART_AT_LOOPCOUNT, 1000)) == 0 ) {
     snprintf(buf, DEBUG_MAX_LINE, "loopIterCount: %lu", loopIterCount);
     Serial.println(buf);
   }
+#endif
   if ( loopIterCount >= RESTART_AT_LOOPCOUNT) {
     setup();
   }
