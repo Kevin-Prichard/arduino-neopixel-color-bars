@@ -23,7 +23,7 @@
 #define DEBUG_LOOPITERS 0x80     // 1... ....  loop()
 
 // Serial debugging: default is all off
-#define SERIAL_DEBUG 0
+#define SERIAL_DEBUG 0x0100
 
 // Serial debugging: full chat
 // Careful! This will likely pin your CPU & keep it from completing setup()
@@ -34,7 +34,9 @@
                       DEBUG_POINTDIST | DEBUG_COLORDIST)
 */
 
-#define RESTART_AT_LOOPCOUNT 25000
+#define BOUNCE_OR_WRAP 1
+
+#define RESTART_AT_LOOPCOUNT 500
 
 #define DEBUG_MAX_LINE 400
 
@@ -49,7 +51,7 @@
 
 // Dim colors to this fraction
 // eventually obtain this value from a rotary encoder or button
-#define DIMMER 1.0
+#define DIMMER 0.25
 
 // New color bars must have color that is at least this fraction of Euclidean
 // distance away from any other color currently in use
@@ -59,10 +61,10 @@
 #define MAX_COLOR_DISTANCE sqrt(pow(256, 2) * 3)
 
 // minimum number of color bars per session
-#define MIN_BARS 3
+#define MIN_BARS 1
 
 // maxium number of color bars per session
-#define MAX_BARS 8
+#define MAX_BARS 1
 
 // minimum color bar length
 #define MIN_BAR_LENGTH 4
@@ -71,10 +73,10 @@
 #define MAX_BAR_LENGTH 16
 
 // minimum color bar speed per loop()
-#define MIN_SPEED_PIXSEC 0.25
+#define MIN_SPEED_PIXSEC 0.125
 
 // maximum color bar speed per loop()
-#define MAX_SPEED_PIXSEC 2.0
+#define MAX_SPEED_PIXSEC 0.5
 
 // minimum alpha / transparency for a color bar
 #define MIN_TRANSPARENCY 0.1
@@ -95,7 +97,7 @@ struct ColorBar {
   float curPos;        // current position on the strip
   PixelColor color;    // color of the bar
   float speed;         // velocity of the bar (currently unchanging)
-  bool direction;      // direction, forwards or backwards
+  char direction;      // direction, forwards or backwards
   float alpha;         // transparency
   float taperHead;     // number of pixels to fade the colorbar's head
   float taperTail;     // number of pixels to fade the tail
@@ -221,7 +223,7 @@ void newBar(ColorBar *b, int barNo) {
   b->color = 0;
   b->speed = MIN_SPEED_PIXSEC + (random(256) / 256.0) *
             (MAX_SPEED_PIXSEC - MIN_SPEED_PIXSEC);
-  b->direction = random(2) >= 1 ? true : false;
+  b->direction = random(2) >0 ? 1 : -1;
   b->alpha = random(256) / 256.0;
   b->taperHead = 0.0;
   b->taperTail = 0.0;
@@ -305,7 +307,7 @@ void setup() {
 
 void loop() {
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG > 0)
-      char buf[DEBUG_MAX_LINE];
+  char buf[DEBUG_MAX_LINE];
 #endif
 
   pixels.clear();
@@ -354,12 +356,65 @@ void loop() {
     Serial.print("\t");
 #endif
 
-    bar->curPos = bar->curPos + bar->speed * (bar->direction ? 1 : -1);
-    if (bar->curPos > NUM_PIXELS) {
+    char fpos[40], fspeed[40];
+
+    dtostrf(bar->curPos, 10, 3, &fpos[0]);
+    dtostrf(bar->speed, 10, 3, &fspeed[0]);
+    snprintf(buf, DEBUG_MAX_LINE,
+      "%c. BOUNCE_OR_WRAP: %d, dir: % 2d, bar# %d, curPos: %s, speed: %s\n",
+      'a', BOUNCE_OR_WRAP, bar->direction, barNo, fpos, fspeed);
+    Serial.print(buf);
+
+    bar->curPos += bar->speed * bar->direction;
+  
+    dtostrf(bar->curPos, 10, 3, &fpos[0]);
+    dtostrf(bar->speed, 10, 3, &fspeed[0]);
+    snprintf(buf, DEBUG_MAX_LINE,
+      "%c. BOUNCE_OR_WRAP: %d, dir: % 2d, bar# %d, curPos: %s, speed: %s\n",
+      'A', BOUNCE_OR_WRAP, bar->direction, barNo, fpos, fspeed);
+    Serial.print(buf);
+
+    if (bar->curPos >= NUM_PIXELS) {
+      if (BOUNCE_OR_WRAP) {
+
+        dtostrf(bar->curPos, 10, 3, &fpos[0]);
+        dtostrf(bar->speed, 10, 3, &fspeed[0]);
+        snprintf(buf, DEBUG_MAX_LINE,
+          "%c. BOUNCE_OR_WRAP: %d, dir: % 2d, bar# %d, curPos: %s, speed: %s\n",
+          'b', BOUNCE_OR_WRAP, bar->direction, barNo, fpos, fspeed);
+        Serial.print(buf);
+
+       bar->direction *= -1;
+
+        dtostrf(bar->curPos, 10, 3, &fpos[0]);
+        dtostrf(bar->speed, 10, 3, &fspeed[0]);
+        snprintf(buf, DEBUG_MAX_LINE,
+          "%c. BOUNCE_OR_WRAP: %d, dir: % 2d, bar# %d, curPos: %s, speed: %s\n",
+          'B', BOUNCE_OR_WRAP, bar->direction, barNo, fpos, fspeed);
+        Serial.print(buf);
+      }
       bar->curPos = 0;
-    }
-    if (bar->curPos < 0) {
-      bar->curPos = NUM_PIXELS;
+      
+    } else if (bar->curPos < 0) {
+      if (BOUNCE_OR_WRAP) {
+        dtostrf(bar->curPos, 10, 3, &fpos[0]);
+        dtostrf(bar->speed, 10, 3, &fspeed[0]);
+        snprintf(buf, DEBUG_MAX_LINE,
+          "%c. BOUNCE_OR_WRAP: %d, dir: % 2d, bar# %d, curPos: %s, speed: %s\n",
+          'c', BOUNCE_OR_WRAP, bar->direction, barNo, fpos, fspeed);
+        Serial.print(buf);
+
+        bar->curPos = NUM_PIXELS;
+        bar->direction *= -1;
+
+        dtostrf(bar->curPos, 10, 3, &fpos[0]);
+        dtostrf(bar->speed, 10, 3, &fspeed[0]);
+        snprintf(buf, DEBUG_MAX_LINE,
+          "%c. BOUNCE_OR_WRAP: %d, dir: % 2d, bar# %d, curPos: %s, speed: %s\n",
+          'C', BOUNCE_OR_WRAP, bar->direction, barNo, fpos, fspeed);
+        Serial.print(buf);
+      }
+      
     }
 
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG & DEBUG_POSCHANGED)
