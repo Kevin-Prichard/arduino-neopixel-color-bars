@@ -84,7 +84,8 @@ extern Adafruit_NeoPixel pixels(NUM_PIXELS, PIN, NEO_GRB + NEO_KHZ800);
    ==============               ===   ===   ===       ====================== */
 extern const PixelColor pixelColors[] = {
 """)
-        for _, color_def in indices["color_defs"]:
+        for _, color_def in sorted(indices["color_defs"],
+                                   key=lambda x: x[1]["mean_diff"]):
             f.write(f"    /* {round(color_def['mean_diff'], 0): 4.0f} */"
                     f"    pixels.Color("
                     f"{', '.join([f'{val: 4d}' for val in color_def['rgb']])}"
